@@ -39,7 +39,10 @@ class ChalkApp extends StatelessWidget {
           ),
         ),
         textTheme: const TextTheme(
-          displayLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          displayLarge: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
           bodyLarge: TextStyle(color: Colors.white),
           bodyMedium: TextStyle(color: Colors.grey),
         ),
@@ -83,9 +86,12 @@ class _AppEntryState extends State<AppEntry> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = context.read<WorkoutProvider>();
-      FileIntentService.init(context, provider);
+      await provider.ensureInitialized; // wait for disk load to finish
+      if (mounted) {
+        FileIntentService.init(context, provider);
+      }
     });
   }
 

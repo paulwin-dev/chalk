@@ -15,20 +15,44 @@ class WorkoutViewScreen extends StatefulWidget {
 
 class _WorkoutViewScreenState extends State<WorkoutViewScreen> {
   int _currentExerciseIndex = 0;
-  Timer? _timer;
+
+  // Rest timer
+  Timer? _restTimer;
   int _secondsRemaining = 0;
+
+  // Elapsed workout timer
+  Timer? _elapsedTimer;
+  int _elapsedSeconds = 0;
+
   DateTime? _startTime;
 
   @override
   void initState() {
     super.initState();
-    _startTime = DateTime.now(); // Mark the start
+    _startTime = DateTime.now();
+    _startElapsedTimer();
+  }
+
+  void _startElapsedTimer() {
+    _elapsedTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      setState(() => _elapsedSeconds++);
+    });
+  }
+
+  String get _formattedElapsed {
+    final h = _elapsedSeconds ~/ 3600;
+    final m = (_elapsedSeconds % 3600) ~/ 60;
+    final s = _elapsedSeconds % 60;
+    if (h > 0) {
+      return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    }
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   void _startRest(int seconds) {
     setState(() => _secondsRemaining = seconds);
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+    _restTimer?.cancel();
+    _restTimer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (_secondsRemaining > 0) {
         setState(() => _secondsRemaining--);
       } else {
@@ -54,8 +78,48 @@ class _WorkoutViewScreenState extends State<WorkoutViewScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text(
-          '${_currentExerciseIndex + 1} / ${widget.program.exercises.length}',
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Elapsed workout timer
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white10,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.timer_outlined,
+                    size: 14,
+                    color: Colors.white54,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    _formattedElapsed,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                      color: Colors.white,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Exercise progress
+            Text(
+              '${_currentExerciseIndex + 1} / ${widget.program.exercises.length}',
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.white54,
+              ),
+            ),
+          ],
         ),
         actions: [
           if (_secondsRemaining > 0)
@@ -119,7 +183,7 @@ class _WorkoutViewScreenState extends State<WorkoutViewScreen> {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      '${exercise.weight} KG', // Or LB based on your preference
+                      '${exercise.weight} KG',
                       style: const TextStyle(
                         color: Colors.black,
                         fontWeight: FontWeight.w900,
@@ -153,9 +217,8 @@ class _WorkoutViewScreenState extends State<WorkoutViewScreen> {
                               vertical: 8,
                             ),
                             leading: CircleAvatar(
-                              backgroundColor: isDone
-                                  ? Colors.white
-                                  : Colors.white24,
+                              backgroundColor:
+                                  isDone ? Colors.white : Colors.white24,
                               radius: 14,
                               child: Text(
                                 '${index + 1}',
@@ -230,7 +293,6 @@ class _WorkoutViewScreenState extends State<WorkoutViewScreen> {
                         final endTime = DateTime.now();
                         final duration = endTime.difference(_startTime!);
 
-                        // Calculate total weight (Sets * Reps * Weight)
                         double totalVolume = 0;
                         int completedSetsCount = 0;
 
@@ -243,10 +305,8 @@ class _WorkoutViewScreenState extends State<WorkoutViewScreen> {
                           }
                         }
 
-                        // Save to history via Provider
                         context.read<WorkoutProvider>().completeWorkout();
 
-                        // Navigate to Summary
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
@@ -255,7 +315,8 @@ class _WorkoutViewScreenState extends State<WorkoutViewScreen> {
                               duration: duration,
                               totalVolume: totalVolume,
                               completedSets: completedSetsCount,
-                              currentStreak: context.read<WorkoutProvider>().streak,
+                              currentStreak:
+                                  context.read<WorkoutProvider>().streak,
                             ),
                           ),
                         );
@@ -279,7 +340,8 @@ class _WorkoutViewScreenState extends State<WorkoutViewScreen> {
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _restTimer?.cancel();
+    _elapsedTimer?.cancel();
     super.dispose();
   }
 }

@@ -7,11 +7,13 @@ class WorkoutProvider with ChangeNotifier {
   List<Program> _programs = [];
   Set<String> _history = {}; // Storing dates as ISO strings
 
-  // In WorkoutProvider class
+  late final Future<void> _initialized;
+  Future<void> get ensureInitialized => _initialized;
+
   Set<String> get history => _history;
 
   WorkoutProvider() {
-    _loadFromDisk();
+    _initialized = _loadFromDisk();
   }
 
   List<Program> get programs => _programs;

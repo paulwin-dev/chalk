@@ -92,25 +92,44 @@ class ImportExportService {
     }
   }
 
-  static Future<String?> importProgramsFromContent(String content, WorkoutProvider provider) async {
-  try {
-    Map<String, dynamic> data = jsonDecode(content);
+  static Future<String?> importProgramsFromContent(
+    String content,
+    WorkoutProvider provider,
+  ) async {
+    try {
+      if (content.trim().isEmpty) return "FILE IS EMPTY";
 
-    if (data.containsKey('type') && data['type'] == 'chalk_bulk_export') {
-      List programsJson = data['programs'];
-      for (var pJson in programsJson) {
-        provider.addOrUpdateProgram(Program.fromJson(pJson).copyWith(
-          id: 'shared_${DateTime.now().millisecondsSinceEpoch}_${pJson['name']}'
-        ));
+      // Debug print to see what is actually coming in
+      print("Importing Content: $content");
+
+      final dynamic decoded = jsonDecode(content);
+
+      // Ensure it's a Map
+      if (decoded is! Map<String, dynamic>) {
+        return "INVALID DATA STRUCTURE";
       }
-    } else {
-      provider.addOrUpdateProgram(Program.fromJson(data).copyWith(
-        id: 'shared_${DateTime.now().millisecondsSinceEpoch}_${data['name']}'
-      ));
+
+      if (decoded.containsKey('type') &&
+          decoded['type'] == 'chalk_bulk_export') {
+        List programsJson = decoded['programs'];
+        for (var pJson in programsJson) {
+          provider.addOrUpdateProgram(
+            Program.fromJson(pJson).copyWith(
+              id: 'shared_${DateTime.now().millisecondsSinceEpoch}_${pJson['name']}',
+            ),
+          );
+        }
+      } else {
+        provider.addOrUpdateProgram(
+          Program.fromJson(decoded).copyWith(
+            id: 'shared_${DateTime.now().millisecondsSinceEpoch}_${decoded['name']}',
+          ),
+        );
+      }
+      return null;
+    } catch (e) {
+      print("Import Error: $e"); // Check console for the specific error
+      return "INVALID CHALK FILE: $e";
     }
-    return null; // Success
-  } catch (e) {
-    return "INVALID CHALK FILE";
   }
-}
 }

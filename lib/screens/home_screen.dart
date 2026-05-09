@@ -123,7 +123,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 0),
             Column(
               children: [
                 if (hasWorkedOutToday)
@@ -149,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Column(
         children: [
-          const Icon(Icons.check_circle_outline, color: Colors.green, size: 40),
+          const Icon(Icons.fitness_center, color: Color.fromARGB(255, 255, 255, 255), size: 40),
           const SizedBox(height: 16),
           Text(
             'WORKOUT COMPLETE',
@@ -341,7 +340,7 @@ class _MonthTrackerState extends State<MonthTracker> {
           ],
         ),
         SizedBox(
-          height: 220, // Adjust based on your screen size
+          height: 221, // Adjust based on your screen size
           child: PageView.builder(
             physics: const BouncingScrollPhysics(),
             controller: _pageController,
@@ -376,6 +375,7 @@ class _MonthTrackerState extends State<MonthTracker> {
         crossAxisCount: 7,
         mainAxisSpacing: 8,
         crossAxisSpacing: 8,
+        childAspectRatio: 1.2,
       ),
       itemCount: 42, // Standard 6-week grid
       itemBuilder: (context, index) {

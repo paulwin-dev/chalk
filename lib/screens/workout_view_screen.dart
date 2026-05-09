@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:chalk/screens/workout_summary_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/workout_program.dart';
@@ -16,6 +17,13 @@ class _WorkoutViewScreenState extends State<WorkoutViewScreen> {
   int _currentExerciseIndex = 0;
   Timer? _timer;
   int _secondsRemaining = 0;
+  DateTime? _startTime;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTime = DateTime.now(); // Mark the start
+  }
 
   void _startRest(int seconds) {
     setState(() => _secondsRemaining = seconds);
@@ -123,16 +131,73 @@ class _WorkoutViewScreenState extends State<WorkoutViewScreen> {
                   Expanded(
                     child: ListView.builder(
                       itemCount: exercise.sets,
-                      itemBuilder: (context, index) => CheckboxListTile(
-                        title: Text('SET ${index + 1}: ${exercise.reps} REPS'),
-                        value: exercise.completedSets[index],
-                        activeColor: Colors.white,
-                        checkColor: Colors.black,
-                        onChanged: (val) {
-                          setState(() => exercise.completedSets[index] = val!);
-                          if (val!) _startRest(exercise.restSeconds);
-                        },
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemBuilder: (context, index) {
+                        final isDone = exercise.completedSets[index];
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: isDone ? Colors.white10 : Colors.grey[900],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isDone
+                                  ? Colors.white.withOpacity(0.1)
+                                  : Colors.transparent,
+                              width: 1,
+                            ),
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            leading: CircleAvatar(
+                              backgroundColor: isDone
+                                  ? Colors.white
+                                  : Colors.white24,
+                              radius: 14,
+                              child: Text(
+                                '${index + 1}',
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            title: Text(
+                              '${exercise.reps} REPS',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: isDone ? Colors.grey : Colors.white,
+                              ),
+                            ),
+                            trailing: Transform.scale(
+                              scale: 1.4,
+                              child: Checkbox(
+                                value: isDone,
+                                activeColor: Colors.white,
+                                checkColor: Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                side: const BorderSide(
+                                  color: Colors.white24,
+                                  width: 2,
+                                ),
+                                onChanged: (val) {
+                                  setState(
+                                    () => exercise.completedSets[index] = val!,
+                                  );
+                                  if (val!) _startRest(exercise.restSeconds);
+                                },
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -162,8 +227,38 @@ class _WorkoutViewScreenState extends State<WorkoutViewScreen> {
                           widget.program.exercises.length - 1) {
                         setState(() => _currentExerciseIndex++);
                       } else {
+                        final endTime = DateTime.now();
+                        final duration = endTime.difference(_startTime!);
+
+                        // Calculate total weight (Sets * Reps * Weight)
+                        double totalVolume = 0;
+                        int completedSetsCount = 0;
+
+                        for (var ex in widget.program.exercises) {
+                          for (int i = 0; i < ex.sets; i++) {
+                            if (ex.completedSets[i]) {
+                              totalVolume += (ex.reps * ex.weight);
+                              completedSetsCount++;
+                            }
+                          }
+                        }
+
+                        // Save to history via Provider
                         context.read<WorkoutProvider>().completeWorkout();
-                        Navigator.pop(context);
+
+                        // Navigate to Summary
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => WorkoutSummaryScreen(
+                              programName: widget.program.name,
+                              duration: duration,
+                              totalVolume: totalVolume,
+                              completedSets: completedSetsCount,
+                              currentStreak: context.read<WorkoutProvider>().streak,
+                            ),
+                          ),
+                        );
                       }
                     },
                     child: Text(

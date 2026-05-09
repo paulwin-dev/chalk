@@ -14,7 +14,7 @@ class Exercise {
     this.reps = 10,
     this.restSeconds = 60,
     this.weight = 15.0,
-  }) : completedSets = List.filled(sets, false);
+  }) : completedSets = List.filled(sets, false, growable: true); // ← growable
 
   Map<String, dynamic> toJson() => {
     'name': name,
